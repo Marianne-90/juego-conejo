@@ -1,0 +1,51 @@
+*{
+  margin: 0;
+  top: 0;
+  box-sizing: border-box;
+}
+
+.bunny{
+  background-color: aquamarine;
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+
+.bunny .conteiner{
+  background-color: antiquewhite;
+  width: 100%;
+  height: 300px;
+position: relative;
+overflow: hidden;
+}
+
+.bunny .conteiner .fresa{
+  width: 60px;
+  height: 60px;
+  position: absolute;
+  /* top: calc(300px - 60px);
+  left: calc(100% - 60px); */
+}
+
+.bunny .conteiner .fresa img{
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.bunny .conteiner .conejo{
+  width: 100px;
+  height: 95px;
+  position: absolute;
+  z-index: 1;
+  /* top: calc(300px - 95px);
+  left: calc(100% - 100px); */
+}
+
+.bunny .conteiner .conejo img{
+  height: 100%;
+  object-fit: contain;
+}
