@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from "react";
 import fresa from "./img/fresa.png";
-import conejo from "./img/conejo.png";
 import conejoDurmiendo from "./img/bunny1.jpg";
 import conejoDespierto from "./img/bunny4.jpg";
 import conejoComiendo from "./img/bunny3.jpg";
@@ -9,16 +8,18 @@ import conejoCorriendo from "./img/bunny2.jpg";
 import "./App.css";
 
 const bunnyImages = {
-  conejoDurmiendo, conejoDespierto, conejoComiendo, conejoCorriendo 
-}
+  conejoDurmiendo,
+  conejoDespierto,
+  conejoComiendo,
+  conejoCorriendo,
+};
 
 function App() {
   const divRef = useRef(null);
   const strawBerryRef = useRef(null);
   const bunnyRef = useRef(null);
 
-  const [divWidth, setDivWidth] = useState(0);
-  const [clickPosition, setClickPosition] = useState({ top: 0, left: 0 });
+  const [bunnyInAction, setBunnyInAction] = useState(false);
   const [strawberryState, setStrawberryState] = useState({
     top: 0,
     left: 0,
@@ -28,7 +29,7 @@ function App() {
     top: 0,
     left: 0,
     trasform: "scaleX(1)",
-    img: bunnyImages.conejoDurmiendo,
+    img: "",
   });
 
   //*! Marcar dónde se hace clic
@@ -36,35 +37,123 @@ function App() {
     const containerRect = divRef.current.getBoundingClientRect();
     const clickX = event.clientX - containerRect.left;
     const clickY = event.clientY - containerRect.top;
-    setClickPosition({ top: clickY, left: clickX });
-    strawberryPosition(clickX, clickY);
+    if(!bunnyInAction){
+      mainFunction(clickX, clickY);
+    }
   };
 
-  //*! Posición de la fresa
-  const strawberryPosition = (x, y) => {
+  //*! Animación caída Fresa
+
+  const animacionCaidaFresa = (top, left, conteinerHeigth) => {
+    return new Promise((resolve) => {
+      setBunyState({ ...bunnyState, img: bunnyImages.conejoDespierto });
+      let position = { top, left, display: "block" };
+      let i = top;
+      const animateDrop = () => {
+        setTimeout(() => {
+          setStrawberryState({ ...position, top: i });
+          i = i + 2;
+          if (i < conteinerHeigth - strawBerryRef.current.offsetHeight) {
+            animateDrop();
+          } else {
+            // La animación ha terminado, resolvemos la promesa
+            resolve();
+          }
+        }, 1);
+      };
+      animateDrop();
+    });
+  };
+
+  //*! Conejo corriendo
+
+  const conejoCorriendo = (strawberryPosition) => {
+    return new Promise((resolve) => {
+      const bunnyWidth = bunnyRef.current.offsetWidth;
+      let bunnyPosition = bunnyState.left;
+      let distance = strawberryPosition - bunnyPosition;
+      let bunny = { ...bunnyState };
+      if (distance > 0) {
+        bunny = {
+          ...bunny,
+          img: bunnyImages.conejoCorriendo,
+          trasform: "scaleX(-1)",
+        };
+        setBunyState(bunny);
+      } else {
+        bunny = {
+          ...bunny,
+          img: bunnyImages.conejoCorriendo,
+          trasform: "scaleX(1)",
+        };
+        setBunyState(bunny);
+      }
+
+      const run = () => {
+        if (distance > 0) {
+          setTimeout(() => {
+            setBunyState({
+              ...bunny,
+              left: bunnyPosition,
+            });
+            bunnyPosition = bunnyPosition + 2;
+            if (bunnyPosition < strawberryPosition - 30) {
+              run();
+            } else {
+              resolve();
+            }
+          }, 1);
+        } else {
+          setTimeout(() => {
+            setBunyState({
+              ...bunny,
+              left: bunnyPosition,
+            });
+            bunnyPosition = bunnyPosition - 2;
+            if (bunnyPosition > strawberryPosition) {
+              run();
+            } else {
+              resolve();
+            }
+          }, 1);
+        }
+      };
+      run();
+    });
+  };
+
+  //*! comida
+
+  const conejoComiendo = async (x) => {
+    let left = x;
+    const eat = (left) => {
+      setBunyState({ ...bunnyState, img: bunnyImages.conejoComiendo, left });
+      return new Promise((resolve) => {
+        const comiendo = () => {
+          setTimeout(() => {
+            resolve();
+          }, 1000);
+        };
+        comiendo();
+      });
+    };
+    await eat(x);
+    setBunyState({ ...bunnyState, img: bunnyImages.conejoDespierto, left });
+  };
+
+  //*! función principal
+  const mainFunction = async (x, y) => {
     let conteinerHeigth = divRef.current.offsetHeight;
     const width = strawBerryRef.current.offsetWidth;
     const heigth = strawBerryRef.current.offsetHeight;
     let top =
       y - heigth / 2 > conteinerHeigth - heigth ? y - heigth : y - heigth / 2;
     let left = x - width / 2;
-    let position = { top, left, display: "block" };
-
-    let i = top;
-    const animateDrop = () => {
-      setTimeout(() => {
-        setStrawberryState({ ...position, top: i });
-        i = i + 2;
-        if (i < conteinerHeigth - strawBerryRef.current.offsetHeight) {
-          animateDrop();
-        }
-      }, 1);
-    };
-
-    animateDrop();
+    setBunnyInAction(true);
+    await animacionCaidaFresa(top, left, conteinerHeigth);
+    await conejoCorriendo(left).then(() => conejoComiendo(left));
+    setBunnyInAction(false);
   };
-
-  //*! Tener el ancho del div cada que cambie la pantalla
 
   useEffect(() => {
     const bunnyPosition = () => {
@@ -74,18 +163,20 @@ function App() {
       const bunnyHeigth = bunnyRef.current.offsetHeight;
       let top = heigth - bunnyHeigth;
       let left = (width - bunnyWidth) / 2;
-      setBunyState({ ...bunnyState, top, left });
+      setBunyState({
+        ...bunnyState,
+        top,
+        left,
+        img: bunnyImages.conejoDurmiendo,
+      });
     };
 
     const handleResize = () => {
-      const width = divRef.current.offsetWidth;
-      setDivWidth(width);
       bunnyPosition();
+      setStrawberryState({ ...strawberryState, display: "none" });
     };
 
-    setStrawberryState({ ...strawberryState, display: "none" });
     handleResize(); // Calcular el ancho del div inicialmente
-    bunnyPosition();
     window.addEventListener("resize", handleResize); // Agregar un listener para cambios de tamaño de pantalla
 
     return () => {
