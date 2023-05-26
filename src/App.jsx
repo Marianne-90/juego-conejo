@@ -1,12 +1,21 @@
 import { useState, useRef, useEffect } from "react";
 import fresa from "./img/fresa.png";
 import conejo from "./img/conejo.png";
+import conejoDurmiendo from "./img/bunny1.jpg";
+import conejoDespierto from "./img/bunny4.jpg";
+import conejoComiendo from "./img/bunny3.jpg";
+import conejoCorriendo from "./img/bunny2.jpg";
 
 import "./App.css";
+
+const bunnyImages = {
+  conejoDurmiendo, conejoDespierto, conejoComiendo, conejoCorriendo 
+}
 
 function App() {
   const divRef = useRef(null);
   const strawBerryRef = useRef(null);
+  const bunnyRef = useRef(null);
 
   const [divWidth, setDivWidth] = useState(0);
   const [clickPosition, setClickPosition] = useState({ top: 0, left: 0 });
@@ -15,11 +24,11 @@ function App() {
     left: 0,
     display: "none",
   });
-  const [bunnyState, bunyState] = useState({
+  const [bunnyState, setBunyState] = useState({
     top: 0,
     left: 0,
     trasform: "scaleX(1)",
-    img: { conejo },
+    img: bunnyImages.conejoDurmiendo,
   });
 
   //*! Marcar dónde se hace clic
@@ -45,7 +54,7 @@ function App() {
     const animateDrop = () => {
       setTimeout(() => {
         setStrawberryState({ ...position, top: i });
-        i++;
+        i = i + 2;
         if (i < conteinerHeigth - strawBerryRef.current.offsetHeight) {
           animateDrop();
         }
@@ -58,14 +67,25 @@ function App() {
   //*! Tener el ancho del div cada que cambie la pantalla
 
   useEffect(() => {
+    const bunnyPosition = () => {
+      const width = divRef.current.offsetWidth;
+      let heigth = divRef.current.offsetHeight;
+      const bunnyWidth = bunnyRef.current.offsetWidth;
+      const bunnyHeigth = bunnyRef.current.offsetHeight;
+      let top = heigth - bunnyHeigth;
+      let left = (width - bunnyWidth) / 2;
+      setBunyState({ ...bunnyState, top, left });
+    };
+
     const handleResize = () => {
       const width = divRef.current.offsetWidth;
       setDivWidth(width);
+      bunnyPosition();
     };
 
     setStrawberryState({ ...strawberryState, display: "none" });
     handleResize(); // Calcular el ancho del div inicialmente
-
+    bunnyPosition();
     window.addEventListener("resize", handleResize); // Agregar un listener para cambios de tamaño de pantalla
 
     return () => {
@@ -87,9 +107,16 @@ function App() {
         >
           <img src={fresa} alt="fresa" />
         </div>
-        <div className="conejo">
+        <div
+          className="conejo"
+          ref={bunnyRef}
+          style={{
+            top: bunnyState.top,
+            left: bunnyState.left,
+          }}
+        >
           <img
-            src={bunnyState.img.conejo}
+            src={bunnyState.img}
             alt="conejo"
             style={{
               transform: bunnyState.trasform,
